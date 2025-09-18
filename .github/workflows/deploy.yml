@@ -48,7 +48,7 @@ jobs:
               git fetch --all
               git reset --hard origin/main
             else
-              git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html
+              git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html
             fi
             chown -R www-data:www-data /var/www/html || true
             systemctl restart php8.2-fpm || true
