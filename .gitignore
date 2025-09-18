@@ -1,0 +1,5 @@
+actions_deploy_key
+actions_deploy_key.pub
+cloud-init.wp.yaml
+do_deploy_key
+do_deploy_key.pub
