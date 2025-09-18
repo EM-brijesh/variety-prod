@@ -11,12 +11,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DO_API_TOKEN }}
-      
+
       - name: Get public IPv4s for droplets
         id: droplets
         run: |
@@ -25,17 +25,17 @@ jobs:
             --no-header \
             --format PublicIPv4 | tr '\n' ',' | sed 's/,$//')
           echo "IPS=$IPS" >> $GITHUB_OUTPUT
-      
+
       - name: Debug Droplet IPs
         run: echo "Droplets:" ${{ steps.droplets.outputs.IPS }}
-      
+
       - name: Install droplet SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
           known_hosts: '*'
-      
-      - name: Deploy to droplets
+
+      - name: Deploy incrementally to droplets
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.droplets.outputs.IPS }}
@@ -43,28 +43,28 @@ jobs:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
           script: |
             set -e
-            
-            # Setup SSH key for GitHub access
+
+            DEPLOY_PATH="/var/www/html/variety/wp-content/themes/variety"
+
+            mkdir -p $(dirname "$DEPLOY_PATH")
+
+            # Setup GitHub deploy key for cloning
             mkdir -p /root/.ssh
             echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > /root/.ssh/id_rsa
             chmod 600 /root/.ssh/id_rsa
             ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-            
-            # Test SSH key (debug)
-            echo "Testing SSH key..."
-            ls -la /root/.ssh/id_rsa
-            ssh -T git@github.com || echo "SSH test completed with exit code $?"
-            
-            # Clone or update repo
-            if [ -d /var/www/html/variety/wp-content/themes/variety/.git ]; then
-              cd /var/www/html/variety/wp-content/themes/variety
-              git fetch --all
-              git reset --hard origin/main
+
+            if [ -d "$DEPLOY_PATH/.git" ]; then
+              cd "$DEPLOY_PATH"
+              git config pull.rebase false   # merge instead of rebase
+              git pull origin main
             else
-              git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html/variety/wp-content/themes/variety
+              git clone git@github.com:EM-brijesh/variety-prod.git "$DEPLOY_PATH"
             fi
-            
-            # Set permissions and restart services
-            chown -R www-data:www-data /var/www/html/variety/wp-content/themes/variety || true
-            systemctl restart php8.4-fpm || true
+
+            # Set permissions
+            chown -R www-data:www-data "$DEPLOY_PATH" || true
+
+            # Restart services
+            systemctl restart php8.2-fpm || true
             systemctl restart nginx || true
