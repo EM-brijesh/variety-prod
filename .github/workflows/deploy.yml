@@ -56,15 +56,15 @@ jobs:
             ssh -T git@github.com || echo "SSH test completed with exit code $?"
             
             # Clone or update repo
-            if [ -d /var/www/html/.git ]; then
-              cd /var/www/html
+            if [ -d /var/www/html/variety/wp-content/themes/variety/.git ]; then
+              cd /var/www/html/variety/wp-content/themes/variety
               git fetch --all
               git reset --hard origin/main
             else
-              git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html
+              git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html/variety/wp-content/themes/variety
             fi
             
             # Set permissions and restart services
-            chown -R www-data:www-data /var/www/html || true
-            systemctl restart php8.2-fpm || true
+            chown -R www-data:www-data /var/www/html/variety/wp-content/themes/variety || true
+            systemctl restart php8.4-fpm || true
             systemctl restart nginx || true
