@@ -32,29 +32,23 @@ jobs:
       - name: Install droplet SSH key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.DO_DEPLOY_KEY }}
-          known_hosts: ${{ steps.droplets.outputs.IPS }}
-          name: id_rsa
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
+          known_hosts: '*'
       
       - name: Deploy to droplets
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.droplets.outputs.IPS }}
           username: ${{ secrets.DO_SSH_USER }}
-          key: ${{ secrets.DO_DEPLOY_KEY }}
+          key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
           script: |
             set -e
-            mkdir -p /root/.ssh
-            echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > /root/.ssh/id_rsa
-            chmod 600 /root/.ssh/id_rsa
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile /root/.ssh/id_rsa\n" > /root/.ssh/config
             if [ -d /var/www/html/.git ]; then
               cd /var/www/html
               git fetch --all
               git reset --hard origin/main
             else
-              rm -rf /var/www/html
-              git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html
+              git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html
             fi
             chown -R www-data:www-data /var/www/html || true
             systemctl restart php8.2-fpm || true
