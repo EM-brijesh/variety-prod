@@ -37,7 +37,7 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
-          scan: true
+          known_hosts: '*'
 
       # Deploy via SSH
       - name: Deploy to droplets
