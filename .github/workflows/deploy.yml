@@ -50,6 +50,11 @@ jobs:
             chmod 600 /root/.ssh/id_rsa
             ssh-keyscan -H github.com >> /root/.ssh/known_hosts
             
+            # Test SSH key (debug)
+            echo "Testing SSH key..."
+            ls -la /root/.ssh/id_rsa
+            ssh -T git@github.com || echo "SSH test completed with exit code $?"
+            
             # Clone or update repo
             if [ -d /var/www/html/.git ]; then
               cd /var/www/html
@@ -58,6 +63,7 @@ jobs:
             else
               git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html
             fi
+            
             # Set permissions and restart services
             chown -R www-data:www-data /var/www/html || true
             systemctl restart php8.2-fpm || true
