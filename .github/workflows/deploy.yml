@@ -43,14 +43,14 @@ jobs:
           script: |
             set -e
             # ensure repo exists and is the right branch
-            if [ -d /var/www/html/.git ]; then
-              cd /var/www/html
+            if [ -d /var/www/html/actions .git ]; then
+              cd /var/www/html/actions
               git fetch --all
               git reset --hard origin/main
             else
-              git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html
+              git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html/actions
             fi
-            chown -R www-data:www-data /var/www/html || true
+            chown -R www-data:www-data /var/www/html/actions || true
             # restart services
             systemctl restart php8.2-fpm || true
             systemctl restart nginx || true
