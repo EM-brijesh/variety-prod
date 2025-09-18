@@ -65,7 +65,7 @@ jobs:
               cd "$DEPLOY_PATH"
               echo "Block 2"
               pwd
-              git status
+              git config --global --add safe.directory /var/www/html/variety/wp-content/themes/variety
               git config pull.rebase false
               git pull origin main
             else
