@@ -8,33 +8,34 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # ✅ Official doctl installer
       - name: Install doctl
-        run: |
-          curl -sL https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(uname -s)-amd64.tar.gz | tar -xzv
-          sudo mv doctl /usr/local/bin
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_API_TOKEN }}
 
-      - name: Authenticate doctl
-        env:
-          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
-        run: |
-          doctl auth init -t "$DO_API_TOKEN"
-
+      # ✅ Get droplets with tag
       - name: Get public IPv4s for droplets with tag
         id: droplets
         run: |
-          IPS=$(doctl compute droplet list --tag-name "${{ secrets.DROPLET_TAG }}" --no-header --format PublicIPv4 | tr '\n' ',' | sed 's/,$//')
+          IPS=$(doctl compute droplet list \
+            --tag-name "${{ secrets.DROPLET_TAG }}" \
+            --no-header \
+            --format PublicIPv4 | tr '\n' ',' | sed 's/,$//')
           echo "IPS=$IPS" >> $GITHUB_OUTPUT
 
-      - name: Install SSH key for actions (so appleboy can use it)
+      # ✅ Load SSH key for appleboy
+      - name: Install SSH key for Actions
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
-          known_hosts: 'github.com' # placeholder; appleboy can work without this but shimataro helps set the key
+          known_hosts: '[]'   # skip strict host checking (ok for your infra)
 
-      - name: Deploy to droplets (SSH & git pull)
+      # ✅ Deploy via SSH
+      - name: Deploy to droplets
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.droplets.outputs.IPS }}
@@ -42,15 +43,13 @@ jobs:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
           script: |
             set -e
-            # ensure repo exists and is the right branch
-            if [ -d /var/www/html/actions .git ]; then
-              cd /var/www/html/actions
+            if [ -d /var/www/html/.git ]; then
+              cd /var/www/html
               git fetch --all
               git reset --hard origin/main
             else
-              git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html/actions
+              git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html
             fi
-            chown -R www-data:www-data /var/www/html/actions || true
-            # restart services
+            chown -R www-data:www-data /var/www/html || true
             systemctl restart php8.2-fpm || true
             systemctl restart nginx || true
