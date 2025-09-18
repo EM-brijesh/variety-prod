@@ -1,61 +1,16 @@
-name: Deploy to DO Autoscale Pool
-
-on:
-  push:
-    branches: [ "main" ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      # 1️⃣ Checkout code (optional, if you want local reference)
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2️⃣ Install doctl
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DO_API_TOKEN }}
-
-      # 3️⃣ Get droplets with your tag
-      - name: Get public IPv4s for droplets
-        id: droplets
-        run: |
-          IPS=$(doctl compute droplet list \
-            --tag-name "${{ secrets.DROPLET_TAG }}" \
-            --no-header \
-            --format PublicIPv4 | tr '\n' ',' | sed 's/,$//')
-          echo "IPS=$IPS" >> $GITHUB_OUTPUT
-
-      # 4️⃣ Debug droplet IPs
-      - name: Debug Droplet IPs
-        run: echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
-
-      # 5️⃣ Load SSH key for droplet access
-      - name: Install droplet SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.DO_DEPLOY_KEY }}
-          known_hosts: '*'
-
-      # 6️⃣ Deploy code via SSH to droplets
       - name: Deploy to droplets
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ steps.droplets.outputs.IPS }}
-          username: ${{ secrets.DO_SSH_USER }}
-          key: ${{ secrets.DO_DEPLOY_KEY }}
+          host: "${{ steps.droplets.outputs.IPS }}"
+          username: "${{ secrets.DO_SSH_USER }}"
+          key: "${{ secrets.DO_DEPLOY_KEY }}"
           script: |
             set -e
-
-            # Prepare GitHub deploy key for cloning inside droplet
             mkdir -p /root/.ssh
             echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > /root/.ssh/id_rsa
             chmod 600 /root/.ssh/id_rsa
-            echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile /root/.ssh/id_rsa\n" > /root/.ssh/config
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile /root/.ssh/id_rsa" > /root/.ssh/config
 
-            # Clone or update repo
             if [ -d /var/www/html/.git ]; then
               cd /var/www/html
               git fetch --all
@@ -65,7 +20,6 @@ jobs:
               git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html
             fi
 
-            # Set permissions and restart services
             chown -R www-data:www-data /var/www/html || true
             systemctl restart php8.2-fpm || true
             systemctl restart nginx || true
