@@ -9,14 +9,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout code locally (optional)
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Install doctl
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DO_API_TOKEN }}
 
+      # 3️⃣ Get droplets by tag
       - name: Get public IPv4s for droplets
         id: droplets
         run: |
@@ -26,16 +29,19 @@ jobs:
             --format PublicIPv4 | tr '\n' ',' | sed 's/,$//')
           echo "IPS=$IPS" >> $GITHUB_OUTPUT
 
+      # 4️⃣ Debug droplet IPs
       - name: Debug Droplet IPs
-        run: echo "Droplets:" ${{ steps.droplets.outputs.IPS }}
+        run: echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
 
+      # 5️⃣ Load SSH key for droplet access
       - name: Install droplet SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
           known_hosts: '*'
 
-      - name: Deploy incrementally to droplets
+      # 6️⃣ Deploy code incrementally to droplets
+      - name: Deploy to droplets
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.droplets.outputs.IPS }}
@@ -46,19 +52,22 @@ jobs:
 
             DEPLOY_PATH="/var/www/html/variety/wp-content/themes/variety"
 
-            mkdir -p $(dirname "$DEPLOY_PATH")
-
-            # Setup GitHub deploy key for cloning
+            # Prepare GitHub deploy key for cloning
             mkdir -p /root/.ssh
             echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > /root/.ssh/id_rsa
             chmod 600 /root/.ssh/id_rsa
             ssh-keyscan -H github.com >> /root/.ssh/known_hosts
 
+            # Incremental deploy
             if [ -d "$DEPLOY_PATH/.git" ]; then
               cd "$DEPLOY_PATH"
-              git config pull.rebase false   # merge instead of rebase
+              git config pull.rebase false
               git pull origin main
             else
+              if [ -d "$DEPLOY_PATH" ]; then
+                echo "Backing up existing folder..."
+                mv "$DEPLOY_PATH" "${DEPLOY_PATH}_backup_$(date +%s)"
+              fi
               git clone git@github.com:EM-brijesh/variety-prod.git "$DEPLOY_PATH"
             fi
 
