@@ -31,7 +31,8 @@ jobs:
 
       # 4️⃣ Debug droplet IPs
       - name: Debug Droplet IPs
-        run: echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
+        run: |
+          echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
 
       # 5️⃣ Load SSH key for droplet access
       - name: Install droplet SSH key
