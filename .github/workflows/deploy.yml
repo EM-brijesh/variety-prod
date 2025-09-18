@@ -1,31 +1,37 @@
-- name: Deploy to droplets
-  uses: appleboy/ssh-action@v1
-  with:
-    host: ${{ steps.droplets.outputs.IPS }}
-    username: ${{ secrets.DO_SSH_USER }}
-    key: ${{ secrets.DO_DEPLOY_KEY }}
-    script: |
-      set -e
+name: CI/CD Pipeline
 
-      mkdir -p /root/.ssh
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-      echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > /root/.ssh/id_rsa
-
-      chmod 600 /root/.ssh/id_rsa
-
-      echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile /root/.ssh/id_rsa" > /root/.ssh/config
-
-      if [ -d /var/www/html/.git ]; then
-        cd /var/www/html
-        git fetch --all
-        git reset --hard origin/main
-      else
-        rm -rf /var/www/html
-        git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html
-      fi
-
-      chown -R www-data:www-data /var/www/html || true
-
-      systemctl restart php8.2-fpm || true
-
-      systemctl restart nginx || true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to droplets
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.droplets.outputs.IPS }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_DEPLOY_KEY }}
+          script: |
+            set -e
+            mkdir -p /root/.ssh
+            echo "${{ secrets.ACTIONS_DEPLOY_KEY }}" > /root/.ssh/id_rsa
+            chmod 600 /root/.ssh/id_rsa
+            echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile /root/.ssh/id_rsa" > /root/.ssh/config
+            if [ -d /var/www/html/.git ]; then
+              cd /var/www/html
+              git fetch --all
+              git reset --hard origin/main
+            else
+              rm -rf /var/www/html
+              git clone git@github.com:EM-brijesh/variety-prod.git /var/www/html
+            fi
+            chown -R www-data:www-data /var/www/html || true
+            systemctl restart php8.2-fpm || true
+            systemctl restart nginx || true
