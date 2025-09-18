@@ -61,7 +61,10 @@ jobs:
 
             # Incremental deploy
             if [ -d "$DEPLOY_PATH/.git" ]; then
+            echo "Block 1"
               cd "$DEPLOY_PATH"
+              echo "Block 2"
+              echo ls
               git config pull.rebase false
               git pull origin main
             else
