@@ -76,5 +76,5 @@ jobs:
             chown -R www-data:www-data "$DEPLOY_PATH" || true
 
             # Restart services
-            systemctl restart php8.2-fpm || true
+            systemctl restart php8.4-fpm || true
             systemctl restart nginx || true
