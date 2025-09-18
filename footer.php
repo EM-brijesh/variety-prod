@@ -9,7 +9,7 @@
  *
  * @package Variety
  */
-
+echo "Responded by ::: =>>".$_SERVER['SERVER_ADDR'];
 ?>
  <h3 class="sr-only">varietyindia</h3>
         <h4 class="sr-only">variety india</h4>
