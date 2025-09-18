@@ -11,13 +11,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install doctl
+      # ✅ Official doctl installer
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DO_API_TOKEN }}
 
-      # Get droplets by tag
+      # ✅ Get droplets with tag
       - name: Get public IPv4s for droplets with tag
         id: droplets
         run: |
@@ -27,14 +27,18 @@ jobs:
             --format PublicIPv4 | tr '\n' ',' | sed 's/,$//')
           echo "IPS=$IPS" >> $GITHUB_OUTPUT
 
-      # Load SSH key
+      # 🔍 Debug Step: Print IPs
+      - name: Debug Droplet IPs
+        run: echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
+
+      # ✅ Load SSH key for appleboy
       - name: Install SSH key for Actions
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.ACTIONS_SSH_PRIVATE_KEY }}
-          known_hosts: ''   # skipping for now
+          known_hosts: ''   # skip strict host checking
 
-      # Deploy
+      # ✅ Deploy via SSH
       - name: Deploy to droplets
         uses: appleboy/ssh-action@v1
         with:
@@ -48,7 +52,6 @@ jobs:
               git fetch --all
               git reset --hard origin/main
             else
-              rm -rf /var/www/html
               git clone [email protected]:EM-brijesh/variety-prod.git /var/www/html
             fi
             chown -R www-data:www-data /var/www/html || true
