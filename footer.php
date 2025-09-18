@@ -65,7 +65,7 @@
 							<a href="<?php echo get_permalink(get_page_by_path('home')); ?>"><img src="<?php echo get_template_directory_uri(); ?>/assets/images/variety-india-logo.webp"
 									class="img-fluid" alt="Logo"></a>
 							<h4>The Business of Entertainment</h4>
-							<a href="<?php echo get_permalink(get_page_by_path('news-tips')); ?>" class="news-tip-footer">Have testing for cicd a News Tip? Let us know</a>
+							<a href="<?php echo get_permalink(get_page_by_path('news-tips')); ?>" class="news-tip-footer">a News Tip? Let us know</a>
 						</div>
 					</div>
 				</div>
