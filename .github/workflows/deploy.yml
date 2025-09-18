@@ -29,7 +29,8 @@ jobs:
 
       # Debug step to print IPs
       - name: Debug Droplet IPs
-        run: echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
+        run: |
+          echo "Droplets: ${{ steps.droplets.outputs.IPS }}"
 
       # Load SSH key
       - name: Install SSH key for Actions
